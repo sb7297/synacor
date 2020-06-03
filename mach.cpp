@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 #include <array>
 
@@ -76,6 +77,14 @@ struct Machine {
 				write(pc+1, (read(pc+2) + read(pc+3)) % 0x8000);
 				pc += 4; return 9;
 			}
+			case 10: { // mult
+				write(pc+1, (read(pc+2) * read(pc+3)) % 0x8000);
+				pc += 4; return 10;
+			}
+			case 11: { // mod
+				write(pc+1, (read(pc+2) % read(pc+3)) % 0x8000);
+				pc += 4; return 11;
+			}
 			case 12: { // and
 				write(pc+1, read(pc+2) & read(pc+3));
 				pc += 4; return 12;
@@ -93,10 +102,38 @@ struct Machine {
 				write(pc+1, val);
 				pc += 3; return 14;
 			}
+			case 15: { // rmem
+				auto val = read(read(pc+2));
+				write(pc+1, val);
+				pc += 3;
+				return 15;
+			}
+			case 16: { // wmem
+				memory[read(pc+1)] = read(pc+2);
+				pc += 3;
+				return 16;
+			}
+			case 17: { // call
+				auto next = pc+2;
+				stack.push_back(next);
+				pc = read(pc+1);
+				return 17;
+			}
+			case 18: { // ret
+				if (stack.empty()) return 0;
+				pc = stack[stack.size()-1];
+				stack.pop_back();
+				return 18;
+			}
 			case 19: { // out
 				cout << (char) read(pc+1);
 				pc += 2;
 				return 19;
+			}
+			case 20: { // in
+				write(pc+1, (uint16_t) getchar());
+				pc += 2;
+				return 20;
 			}
 			case 21: { // nop
 				pc += 1;
